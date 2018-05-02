@@ -1,0 +1,340 @@
+#include <iostream>
+#include <cstdlib>
+#include <stdbool.h>
+#include <cstdbool>
+#include <assert.h>
+using namespace std;
+
+template <typename elemtype>
+class DoubleLinkList{
+public:
+        class LinkNode{
+        public:
+                elemtype data;
+                LinkNode *next;//后继指针
+                LinkNode *prior;//前驱指针
+        };
+        typedef LinkNode* NodePointer;
+
+        //置空
+        void clear();
+
+        //删除链表中数据域为e的第一个结点
+        void deleteElem(elemtype e);
+
+        //取循环双链表的第i个结点的数据域
+        elemtype getElem(int i);
+
+
+        //求链表的结点的个数
+        int getLength();
+
+        //在第i个结点前插入数据域为e的结点
+        void insert(int i, elemtype e);
+
+        //判断链表是否为空
+        bool isEmpty();
+
+        //返回数据域为e的第一个结点的指针
+        void locateElem(elemtype find_e, NodePointer& r);//NodePointer& r为引用变量
+
+        //返回结点后继的数据域
+        elemtype nextElem(elemtype e);
+
+        //从在赋值运算符
+        DoubleLinkList operator=(DoubleLinkList other);
+
+        //返回某结点的前驱的数据域
+        elemtype priorElem(elemtype e);
+
+        //构造函数
+        DoubleLinkList();
+
+        //拷贝构造函数
+        DoubleLinkList(DoubleLinkList<elemtype> &other);
+
+        //析构函数
+        virtual ~DoubleLinkList();
+
+        template <typename out_put>
+        friend ostream& operator <<(ostream& out, DoubleLinkList<out_put> &other);
+
+protected:
+        NodePointer head;
+};
+
+
+template <typename elemtype>
+void DoubleLinkList<elemtype>::clear(){
+        NodePointer r, p;//预分别指向待删除节点的前驱和待删除结点的指针
+        if (!head){
+                return;//若列表为空，则不执行任何操作
+        }
+
+        //回收每个结点空间
+        //从最后一个节点开始，向前滑动
+        p = head->prior;//指向最后一个结点
+        while (p != head){
+                r = p->prior;//指向待删除结点的前驱
+                delete p;
+                p = r;
+        }
+
+        delete p;
+        head = NULL;
+}
+
+
+template <typename elemtype>
+void DoubleLinkList<elemtype>::deleteElem(elemtype e){
+        NodePointer p;
+        locateElem(e, p);//使p指向第一个数据域为e的结点
+
+        if (head->next == head){
+                head = NULL;
+        }
+        else{
+                if (p == head){
+                        head = p->next;
+                }
+                p->prior->next = p->next;
+                p->next->prior = p->prior;
+        }
+        delete p;
+        cout << "删除成功" << endl;
+}
+
+template <typename elemtype>
+elemtype DoubleLinkList<elemtype>::getElem(int i){
+        int j = 1;
+        NodePointer p = head;
+        while (p && p->next != head && j < i){//向后滑动
+                p = p->next;
+                j++;
+        }
+
+        if (j == i){
+                return p->data;
+        }
+}
+
+
+template <typename elemtype>
+int DoubleLinkList<elemtype>::getLength(){
+        int length = 0;
+        NodePointer p = head;
+
+        while (p){
+                lenght++;
+                p = p->next;
+                if (p == head){
+                        break;//循环双链表的终止方法
+                }
+        }
+        return length;
+}
+
+
+template <typename elemtype>
+void DoubleLinkList<elemtype>::insert(int i, elemtype e){
+        int j = 1;
+        NodePointer p = head;//指向当前结点的指针,初始化指向head
+        NodePointer s;//指向带插入结点的指针
+
+        while (p&&(j < i)){
+                p = p->next;
+                j++;
+        }
+
+        s = new LinkNode;//动态申请空间
+        assert(s != 0);
+        s->data = e;
+
+        if (i == 1){//如果插入的是第一个结点
+                if (!head){
+                        head = s->prior = s->next = s;
+                        cout << "首项插入成功" << endl;
+                        return;
+                }
+                head = s;
+                cout << "首项替换成功" << endl;
+        }
+
+        //插入的基本功
+        p->prior->next = s;
+        s->prior = p->prior;
+        p->prior = s;
+        s->next = p;
+        cout << "插入成功" << endl;
+}
+
+template <typename elemtype>
+bool DoubleLinkList<elemtype>::isEmpty(){
+        return head ? false : true;
+}
+
+
+template <typename elemtype>
+void DoubleLinkList<elemtype>::locateElem(elemtype e, NodePointer &r){
+        NodePointer p = head;
+
+        while (p&&p->next &&p->data != e){
+                p = p->next;
+        }
+        if (p->data == e){
+                r = p;
+                cout << "成功定位" << endl;
+                return;
+        }
+        else{
+                cout << "获取失败，该链表中可能没有这个指针" << endl;
+                return;
+        }
+}
+
+template <typename elemtype>
+elemtype DoubleLinkList<elemtype>::nextElem(elemtype e){
+        NodePointer p = head;
+        if (locateElem(e, p)){
+                return p->next->data;//返回后继的数据域
+        }
+        else{
+                cout << "失败" << endl;
+                return 0;
+        }
+}
+
+//重载赋值运算符
+template <typename elemtype>
+DoubleLinkList<elemtype> DoubleLinkList<elemtype>::operator =(DoubleLinkList<elemtype> other){
+        NodePointer p = NULL;
+        NodePointer rp = other.head;
+
+        NodePointer s;//预指向新节点
+
+        if (this != &other){
+                clear();
+
+                cout << "11111" << endl;
+                while (1){
+                        s = new LinkNode;
+                        assert(s != 0);
+                        s->data = rp->data;
+
+                        if (!head){
+                                head = p = s;
+                        }
+                        //进行链接
+                        p->next = s;
+                        s->prior = p;
+                        p = s;
+                        cout << "22222" << endl;
+                        //向下滑动
+                        rp = rp->next;
+                        if (rp == other.head){
+                                break;
+                        }
+                }
+                if (head){
+                        head->prior = p;//形成循环链表
+                        p->next = head;
+                }
+        }
+        return *this;
+}
+
+
+template <typename elemtype>
+elemtype DoubleLinkList<elemtype>::priorElem(elemtype e){
+        NodePointer p;
+        if (locateElem(e, p)){
+                return p->prior->data;
+        }
+}
+
+
+template <typename elemtype>
+DoubleLinkList<elemtype>::DoubleLinkList(){
+        head = NULL;//默认的构造函数就是把头指针置空
+}
+
+       
+template <typename elemtype>
+DoubleLinkList<elemtype>::~DoubleLinkList(){
+        clear();
+}
+
+template<typename elemtype>
+DoubleLinkList<elemtype>::DoubleLinkList(DoubleLinkList<elemtype> &other){
+        NodePointer p;
+        NodePointer op = other.head;
+
+        NodePointer s;
+
+        head = p = NULL;
+
+        while (op){
+                s = new LinkNode;//动态申请空间
+                assert(s != 0);
+                s->data = op->data;
+
+                if (!head){
+                        head = p = s;
+                }
+                //常规操作(`_`!)
+                p->next = s;
+                s->prior = p;
+                p = s;
+
+
+                op = op->next;
+                if (op == other.head){
+                        break;
+                }
+        }
+
+        if (head)
+        {//形成循环链表
+                head->prior = p;
+                p->next = head;
+        }
+}
+
+//重载输出运算符
+template <typename out_put>
+ostream& operator <<(ostream& out, DoubleLinkList<out_put> &other){
+        DoubleLinkList<out_put>::NodePointer s = other.head;
+        while (1){
+                out << s->data << "\t";
+                s = s->next;
+                if (s==other.head){
+                        return out;
+                }
+        }
+}
+
+int main(void){
+        DoubleLinkList<int> d1;
+        d1.insert(1, 1);
+        d1.insert(2, 2);
+        d1.insert(3, 3);
+        cout << "d1为:";
+        cout << d1 << endl;
+
+        DoubleLinkList<int> d2;
+        for (int i = 1; i < 11; i++){
+                d2.insert(i, i);
+        }
+        cout << "d2为:";
+        cout << d2 << endl;
+
+        d1 = d2;//检验赋值运算符的重载
+        cout << "d1:::::::" << endl;
+        cout << d1 << endl;
+
+        DoubleLinkList<int> d3(d2);//检验拷贝构造函数
+        cout << "d3::::::::" << endl;
+        cout << d3 << endl;
+        return 0;
+}
+
